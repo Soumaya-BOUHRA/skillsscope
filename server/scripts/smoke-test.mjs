@@ -87,10 +87,10 @@ async function main() {
     const resumeId = upload.data.data?.resume?.id;
     if (resumeId) {
       const analysis = await call(`/analysis/${resumeId}`, { method: 'POST', token });
-      const aiReady = health.data.data?.ai?.configured;
+      const aiReady = Boolean(process.env.AI_API_KEY?.trim());
       assert(
         aiReady ? analysis.status === 201 : analysis.status === 503,
-        aiReady ? 'POST /analysis (AI configured)' : 'POST /analysis -> 503 without XAI_API_KEY',
+        aiReady ? 'POST /analysis (AI configured)' : 'POST /analysis -> 503 without AI_API_KEY',
         `status=${analysis.status}`
       );
     }

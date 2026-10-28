@@ -60,7 +60,7 @@ Express API
    ↓
 AI Service (server-side only)
    ↓
-xAI API → Grok
+Groq API (OpenAI-compatible)
    ↓
 Structured JSON (validated)
    ↓
@@ -103,7 +103,7 @@ skillscope/
 
 **Backend** — Node.js, Express, MongoDB Atlas, Mongoose, JWT, bcryptjs, multer, pdf-parse, mammoth, tesseract.js.
 
-**AI** — xAI Grok API (server-side only; the key is never exposed to the browser).
+**AI** — Groq API through its OpenAI-compatible endpoint (server-side only; the key is never exposed to the browser).
 
 ---
 
@@ -127,9 +127,12 @@ MONGODB_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=a_long_random_secret_at_least_16_chars
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
-XAI_API_KEY=your_xai_api_key
-XAI_MODEL=grok-4.7
+AI_API_KEY=your_groq_api_key
+AI_MODEL=openai/gpt-oss-120b
+AI_BASE_URL=https://api.groq.com/openai/v1
 AI_TIMEOUT_MS=120000
+AI_MAX_INPUT_CHARS=10000
+AI_MAX_OUTPUT_TOKENS=3000
 ```
 
 **`client/.env`** (copy `client/.env.example`)
@@ -147,11 +150,14 @@ VITE_API_URL=http://localhost:5000/api
 3. Copy the connection string into `MONGODB_URI`.
 4. If `MONGODB_URI` is empty, the server falls back to an **in-memory MongoDB** for local development (data is lost on restart).
 
-### xAI configuration
+### Groq configuration
 
-1. Create an API key at [console.x.ai](https://console.x.ai).
-2. Set `XAI_API_KEY` in `server/.env`.
-3. Without a valid key, analysis endpoints return a clear `503` message instead of failing silently.
+1. Create an API key at [console.groq.com](https://console.groq.com).
+2. Set `AI_API_KEY` in `server/.env` and choose an `AI_MODEL` available in your Groq account.
+3. `AI_BASE_URL` defaults to `https://api.groq.com/openai/v1`; the client calls its OpenAI-compatible `/chat/completions` endpoint.
+4. `AI_MAX_INPUT_CHARS` (default `10000`) trims the cleaned CV text before sending it, and `AI_MAX_OUTPUT_TOKENS` (default `3000`) caps the response.
+5. Without a valid key, analysis endpoints return a clear `503` message instead of failing silently. Invalid credentials (`401`), oversized requests (`413`), rate limits (`429`) and timeouts return explicit errors.
+6. Empty responses and responses cut off by the output limit (`finish_reason: "length"`) are rejected before anything is saved.
 
 ---
 
@@ -231,6 +237,9 @@ npm run smoke --prefix server
 
 # including a real upload + AI analysis
 SMOKE_UPLOAD=/path/to/cv.pdf npm run smoke --prefix server
+
+# Groq connectivity: simple completion, then validated structured extraction
+npm run ai:test --prefix server
 ```
 
 ---
@@ -243,7 +252,7 @@ SMOKE_UPLOAD=/path/to/cv.pdf npm run smoke --prefix server
 - Multer file filter (extension + MIME), 5 MB limit, randomized filenames, uploads served only through an authenticated route.
 - AI responses parsed and validated (`normalizeAnalysisResult`) before hitting MongoDB; the AI never writes to the database directly.
 - Scores always computed in the backend from fixed weights in `server/utils/scoringWeights.js`.
-- `MONGODB_URI`, `JWT_SECRET` and `XAI_API_KEY` exist only in `server/.env` (git-ignored).
+- `MONGODB_URI`, `JWT_SECRET` and `AI_API_KEY` exist only in `server/.env` (git-ignored).
 
 ---
 

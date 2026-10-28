@@ -14,7 +14,6 @@ import matchRoutes from './routes/matchRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import historyRoutes from './routes/historyRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
-import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from './middleware/uploadMiddleware.js';
 import { isAiConfigured } from './services/aiClient.js';
 
 dotenv.config();
@@ -35,12 +34,7 @@ app.use(morgan('dev'));
 app.get('/api/health', (_req, res) =>
   res.json({
     success: true,
-    data: {
-      status: 'ok',
-      uptime: process.uptime(),
-      ai: { configured: isAiConfigured(), model: process.env.XAI_MODEL || 'grok-4.7' },
-      uploads: { maxBytes: MAX_FILE_SIZE, allowed: ALLOWED_EXTENSIONS },
-    },
+    message: 'SkillScope API is running',
   })
 );
 
@@ -60,7 +54,7 @@ if (!fs.existsSync(path.resolve(process.cwd(), '.env'))) {
 }
 
 if (!isAiConfigured()) {
-  console.warn('[ai] XAI_API_KEY is not set — CV analysis endpoints will return 503 until it is configured.');
+  console.warn('[ai] AI_API_KEY is not set — CV analysis endpoints will return 503 until it is configured.');
 }
 
 connectDB()

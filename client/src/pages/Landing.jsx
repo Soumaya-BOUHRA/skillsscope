@@ -56,7 +56,7 @@ const TECH = [
   { icon: Zap, name: 'React + Vite' },
   { icon: Cpu, name: 'Node.js + Express' },
   { icon: GitBranch, name: 'MongoDB Atlas' },
-  { icon: Sparkles, name: 'xAI Grok' },
+  { icon: Sparkles, name: 'Groq API' },
   { icon: ShieldCheck, name: 'JWT + bcrypt' },
   { icon: ScanText, name: 'OCR engine' },
 ];

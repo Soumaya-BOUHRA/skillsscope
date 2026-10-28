@@ -1,4 +1,4 @@
-import { chatJson, AiError } from './aiClient.js';
+import { chatJson, getAiConfig, prepareAiInput, AiError } from './aiClient.js';
 
 const asString = (value, max = 500) =>
   typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
@@ -246,10 +246,16 @@ export async function analyzeResume(resumeText) {
     throw new AiError('The CV contains no readable text.', 'EMPTY_DOCUMENT', 422);
   }
 
+  const { maxInputChars } = getAiConfig();
+  const cleanedResume = prepareAiInput(resumeText, maxInputChars);
+  if (!cleanedResume) {
+    throw new AiError('The CV contains no readable text.', 'EMPTY_DOCUMENT', 422);
+  }
+
   const raw = await chatJson(
     [
       { role: 'system', content: RESUME_ANALYSIS_PROMPT },
-      { role: 'user', content: `CV TEXT:\n${resumeText.slice(0, 24000)}` },
+      { role: 'user', content: `CV TEXT:\n${cleanedResume}` },
     ],
     { temperature: 0.1 }
   );
@@ -326,10 +332,11 @@ export function calculateResumeInsights(analysis, resumeText = '') {
 }
 
 export async function getCareerRecommendations(profilePayload) {
+  const { maxInputChars } = getAiConfig();
   const raw = await chatJson(
     [
       { role: 'system', content: CAREER_PROMPT },
-      { role: 'user', content: JSON.stringify(profilePayload).slice(0, 16000) },
+      { role: 'user', content: JSON.stringify(profilePayload).slice(0, maxInputChars) },
     ],
     { temperature: 0.3 }
   );
@@ -341,12 +348,14 @@ export async function getCareerRecommendations(profilePayload) {
 }
 
 export async function matchResumeWithJob(profilePayload, jobPayload) {
+  const { maxInputChars } = getAiConfig();
+  const halfInput = Math.floor(maxInputChars / 2);
   const raw = await chatJson(
     [
       { role: 'system', content: MATCH_PROMPT },
       {
         role: 'user',
-        content: `CANDIDATE PROFILE:\n${JSON.stringify(profilePayload).slice(0, 12000)}\n\nJOB POSTING:\n${JSON.stringify(jobPayload).slice(0, 12000)}`,
+        content: `CANDIDATE PROFILE:\n${JSON.stringify(profilePayload).slice(0, halfInput)}\n\nJOB POSTING:\n${JSON.stringify(jobPayload).slice(0, halfInput)}`,
       },
     ],
     { temperature: 0.1 }
